@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   QUESTIONS,
@@ -9,6 +9,12 @@ import {
   type ListCode,
   type ThemeSlug,
 } from "@/lib/questions";
+import {
+  STATS_ENABLED,
+  failRate,
+  fetchQuestionStats,
+  type QuestionStat,
+} from "@/lib/stats";
 
 const LISTS: { code: ListCode; label: string }[] = [
   { code: "CSP", label: "Carte de séjour pluriannuelle (CSP)" },
@@ -25,16 +31,44 @@ export default function ReviserClient() {
   const [list, setList] = useState<ListCode | "all">("all");
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
+  const [byDifficulty, setByDifficulty] = useState(false);
+  const [stats, setStats] = useState<Map<number, QuestionStat>>(new Map());
+
+  // Charge les statistiques globales (si Supabase est configuré)
+  useEffect(() => {
+    if (!STATS_ENABLED) return;
+    let active = true;
+    fetchQuestionStats().then((s) => {
+      if (active) setStats(s);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const hasStats = stats.size > 0;
+  // Seuil de tentatives pour qu'un taux d'échec soit jugé significatif
+  const MIN_ATTEMPTS = 5;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return QUESTIONS.filter((item) => {
+    const result = QUESTIONS.filter((item) => {
       if (theme !== "all" && item.themeSlug !== theme) return false;
       if (list !== "all" && !item.lists.includes(list)) return false;
       if (q && !item.q.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [theme, list, query]);
+
+    if (byDifficulty && hasStats) {
+      const rate = (id: number) => {
+        const r = failRate(stats.get(id), MIN_ATTEMPTS);
+        // les questions sans assez de données passent en fin de liste
+        return r === null ? -1 : r;
+      };
+      result.sort((a, b) => rate(b.id) - rate(a.id));
+    }
+    return result;
+  }, [theme, list, query, byDifficulty, hasStats, stats]);
 
   return (
     <div className="space-y-6">
@@ -93,6 +127,31 @@ export default function ReviserClient() {
             />
           ))}
         </div>
+
+        {/* Tri par difficulté (statistiques globales anonymes) */}
+        {STATS_ENABLED && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Trier :
+            </span>
+            <FilterChip
+              active={!byDifficulty}
+              onClick={() => setByDifficulty(false)}
+              label="Par défaut"
+            />
+            <FilterChip
+              active={byDifficulty}
+              onClick={() => setByDifficulty(true)}
+              label="🔥 Les plus difficiles"
+              title="Classement par taux d'échec de l'ensemble des utilisateurs"
+            />
+            {byDifficulty && !hasStats && (
+              <span className="text-xs text-slate-400">
+                (pas encore assez de données)
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results */}
@@ -105,6 +164,7 @@ export default function ReviserClient() {
           {filtered.map((item) => {
             const t = THEME_BY_SLUG[item.themeSlug];
             const open = openId === item.id;
+            const rate = failRate(stats.get(item.id), MIN_ATTEMPTS);
             return (
               <li
                 key={item.id}
@@ -129,6 +189,20 @@ export default function ReviserClient() {
                           {l}
                         </span>
                       ))}
+                      {rate !== null && (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+                            rate >= 50
+                              ? "border-rose-200 bg-rose-50 text-rose-700"
+                              : rate >= 25
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          }`}
+                          title="Taux d'échec global (tous utilisateurs)"
+                        >
+                          ❌ {rate}% d&apos;échec
+                        </span>
+                      )}
                     </div>
                     <p className="font-medium text-slate-900">{item.q}</p>
                   </div>

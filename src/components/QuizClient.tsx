@@ -21,6 +21,7 @@ import {
   type QuizOutcome,
   type QuizSession,
 } from "@/lib/gamification";
+import { recordAnswers } from "@/lib/stats";
 
 type Phase = "setup" | "playing" | "results";
 
@@ -88,6 +89,13 @@ export default function QuizClient() {
     const session = buildSession(finalItems);
     setOutcome(applyQuiz(loadProfile(), session));
     setPhase("results");
+    // Statistiques globales anonymes (best-effort, ne bloque pas l'UI)
+    void recordAnswers(
+      finalItems.map((it) => ({
+        id: it.question.id,
+        wrong: it.picked !== it.correctIdx,
+      })),
+    );
   }
 
   function next() {

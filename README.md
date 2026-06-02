@@ -50,6 +50,35 @@ Pages…). Chaque question contient :
 }
 ```
 
+## Statistiques globales (optionnel · Supabase)
+
+L'app peut agréger, **de façon anonyme**, les réponses de tous les utilisateurs
+pour faire ressortir les **questions les plus difficiles** (taux d'échec global).
+Aucune donnée personnelle n'est enregistrée : seulement des compteurs par
+question (`attempts`, `wrong`). C'est **désactivé par défaut** — sans
+configuration, l'app reste 100 % statique.
+
+Pour l'activer :
+
+1. Créez un projet sur [supabase.com](https://supabase.com).
+2. Dans **SQL Editor**, exécutez le contenu de [`supabase/schema.sql`](supabase/schema.sql)
+   (table `question_stats`, fonction `record_answers` en `security definer`, RLS).
+3. Dans **Project Settings → API**, copiez l'URL du projet et la clé `anon public`.
+4. Renseignez les variables (voir [`.env.example`](.env.example)), en local dans
+   `.env.local` et/ou sur Vercel :
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+
+Une fois configuré : chaque quiz terminé envoie ses résultats (anonymes), et le
+mode **Réviser** propose un tri « 🔥 Les plus difficiles » avec un taux d'échec
+par question. L'écriture passe uniquement par une fonction `security definer`
+(les clients anonymes ne peuvent pas écrire de lignes arbitraires).
+
+> Évolution prévue : comptes utilisateurs (synchronisation multi-appareils).
+
 ## Stack technique
 
 - [Next.js 16](https://nextjs.org/) (App Router) + React 19
