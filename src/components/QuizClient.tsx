@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   QUESTIONS,
@@ -53,6 +53,14 @@ export default function QuizClient() {
       return true;
     });
   }, [theme, list]);
+
+  // Mode immersif pendant le jeu : masque le chrome global (en-tête, pied, nav)
+  useEffect(() => {
+    const root = document.documentElement;
+    if (phase === "playing") root.setAttribute("data-quiz-immersive", "true");
+    else root.removeAttribute("data-quiz-immersive");
+    return () => root.removeAttribute("data-quiz-immersive");
+  }, [phase]);
 
   function start() {
     const picked = shuffle(available).slice(0, Math.min(length, available.length));
@@ -280,9 +288,12 @@ function Playing({
   const gained = answered && isCorrect ? pointsForStreak(streak) : 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Progress */}
-      <div>
+    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col px-4">
+      {/* Haut : progression (fixe) */}
+      <div
+        className="shrink-0"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 0.75rem)" }}
+      >
         <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
           <button
             onClick={onQuit}
@@ -322,21 +333,21 @@ function Playing({
         )}
       </div>
 
-      {/* Question card */}
+      {/* Milieu : question + réponses (défile si nécessaire) */}
       <div
         key={current}
-        className="animate-fade-in rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="animate-fade-in min-h-0 flex-1 overflow-y-auto py-4"
       >
         <span
           className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${t.chip}`}
         >
           {t.emoji} {t.short}
         </span>
-        <h2 className="mt-4 text-xl font-bold leading-snug text-slate-900">
+        <h2 className="mt-3 text-lg font-bold leading-snug text-slate-900 sm:text-xl">
           {item.question.q}
         </h2>
 
-        <div className="mt-5 space-y-2.5">
+        <div className="mt-4 space-y-2.5">
           {item.options.map((opt, i) => {
             const state = optionState(i, item, answered);
             return (
@@ -344,7 +355,7 @@ function Playing({
                 key={i}
                 disabled={answered}
                 onClick={() => onAnswer(i)}
-                className={`flex w-full touch-manipulation items-center gap-3 rounded-xl border px-4 py-4 text-left text-slate-800 transition ${stateClasses(state)}`}
+                className={`flex w-full touch-manipulation items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-slate-800 transition ${stateClasses(state)}`}
               >
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-semibold ${badgeClasses(state)}`}
@@ -362,35 +373,42 @@ function Playing({
         </div>
 
         {answered && (
-          <div className="animate-fade-in mt-5">
-            <div
-              className={`rounded-xl px-4 py-3 text-sm font-medium ${
-                isCorrect
-                  ? "bg-emerald-50 text-emerald-800"
-                  : "bg-rose-50 text-rose-800"
-              }`}
-            >
-              <span className="inline-flex items-center gap-2">
-                {isCorrect ? "✓ Bonne réponse !" : "✕ Mauvaise réponse."}
-                {gained > 0 && (
-                  <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-                    +{gained} XP
-                  </span>
-                )}
-              </span>{" "}
-              <span className="font-normal text-slate-600">
-                {item.question.explanation}
-              </span>
-            </div>
-            <button
-              onClick={onNext}
-              className="mt-4 w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800"
-            >
-              {isLast ? "Voir mon résultat →" : "Question suivante →"}
-            </button>
+          <div
+            className={`animate-fade-in mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+              isCorrect
+                ? "bg-emerald-50 text-emerald-800"
+                : "bg-rose-50 text-rose-800"
+            }`}
+          >
+            <span className="inline-flex items-center gap-2">
+              {isCorrect ? "✓ Bonne réponse !" : "✕ Mauvaise réponse."}
+              {gained > 0 && (
+                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                  +{gained} XP
+                </span>
+              )}
+            </span>{" "}
+            <span className="font-normal text-slate-600">
+              {item.question.explanation}
+            </span>
           </div>
         )}
       </div>
+
+      {/* Bas : bouton suivant (toujours visible une fois la réponse donnée) */}
+      {answered && (
+        <div
+          className="shrink-0 border-t border-slate-100 pt-3"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}
+        >
+          <button
+            onClick={onNext}
+            className="w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800"
+          >
+            {isLast ? "Voir mon résultat →" : "Question suivante →"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

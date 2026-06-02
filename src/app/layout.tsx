@@ -48,7 +48,10 @@ export default function RootLayout({
         className={`${geist.className} min-h-screen bg-slate-50 text-slate-900 antialiased`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
+        <header
+          data-site-chrome
+          className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur"
+        >
           <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
             <Link
               href="/"
@@ -91,8 +94,16 @@ export default function RootLayout({
             </div>
           </nav>
         </header>
-        <main className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:py-8">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 pb-28 pt-6 text-center text-xs text-slate-500 sm:pb-10">
+        <main
+          data-app-main
+          className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:py-8"
+        >
+          {children}
+        </main>
+        <footer
+          data-site-chrome
+          className="mx-auto max-w-5xl px-4 pb-28 pt-6 text-center text-xs text-slate-500 sm:pb-10"
+        >
           <p>
             Outil d&apos;entraînement non officiel. Les énoncés proviennent des listes
             officielles publiées sur{" "}

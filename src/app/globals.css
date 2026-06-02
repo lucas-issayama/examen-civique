@@ -18,3 +18,16 @@ html {
 .animate-fade-in {
   animation: fade-in 0.35s ease-out;
 }
+
+/* Mode quiz immersif : on masque l'en-tête, le pied de page et la barre de
+   navigation pour que la question et le bouton « suivant » tiennent à l'écran. */
+[data-quiz-immersive] [data-site-chrome] {
+  display: none !important;
+}
+[data-quiz-immersive] [data-app-main] {
+  padding: 0;
+  max-width: 100%;
+}
+[data-quiz-immersive] body {
+  padding-top: 0 !important;
+}

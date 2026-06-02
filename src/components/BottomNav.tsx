@@ -15,6 +15,7 @@ export default function BottomNav() {
 
   return (
     <nav
+      data-site-chrome
       className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
