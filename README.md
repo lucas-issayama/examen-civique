@@ -77,6 +77,8 @@ mode **Réviser** propose un tri « 🔥 Les plus difficiles » avec un taux d'�
 par question. L'écriture passe uniquement par une fonction `security definer`
 (les clients anonymes ne peuvent pas écrire de lignes arbitraires).
 
+📋 Guide d'activation pas à pas (en portugais) : [`supabase/SETUP.md`](supabase/SETUP.md).
+
 > Évolution prévue : comptes utilisateurs (synchronisation multi-appareils).
 
 ## Stack technique
