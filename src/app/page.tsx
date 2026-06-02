@@ -19,16 +19,16 @@ export default function Home() {
           avec un quiz interactif. Les énoncés sont tirés des listes officielles
           (CSP et CR) du ministère de l&apos;Intérieur.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
           <Link
             href="/quiz"
-            className="rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-slate-700"
+            className="touch-manipulation rounded-xl bg-slate-900 px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-slate-700 active:scale-[0.98] active:bg-slate-800"
           >
             🎯 Lancer un quiz
           </Link>
           <Link
             href="/reviser"
-            className="rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-800 transition hover:bg-slate-100"
+            className="touch-manipulation rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-semibold text-slate-800 transition hover:bg-slate-100 active:scale-[0.98] active:bg-slate-100"
           >
             📚 Réviser les questions
           </Link>
@@ -48,7 +48,7 @@ export default function Home() {
             <Link
               key={t.slug}
               href={`/reviser?theme=${t.slug}`}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group relative touch-manipulation overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
             >
               <div
                 className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${t.accent}`}

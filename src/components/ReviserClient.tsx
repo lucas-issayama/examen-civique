@@ -55,7 +55,7 @@ export default function ReviserClient() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un mot-clé…"
-          className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
         />
 
         <div className="flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export default function ReviserClient() {
               >
                 <button
                   onClick={() => setOpenId(open ? null : item.id)}
-                  className="flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-slate-50"
+                  className="flex w-full touch-manipulation items-start gap-3 px-5 py-4 text-left transition hover:bg-slate-50 active:bg-slate-100"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap gap-1.5">
@@ -188,10 +188,10 @@ function FilterChip({
     <button
       onClick={onClick}
       title={title}
-      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+      className={`touch-manipulation rounded-full border px-3.5 py-2 text-sm font-medium transition active:scale-95 ${
         active
           ? "border-slate-900 bg-slate-900 text-white"
-          : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+          : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100"
       }`}
     >
       {label}

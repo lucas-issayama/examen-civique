@@ -187,7 +187,7 @@ function Setup({
       <button
         onClick={onStart}
         disabled={available === 0}
-        className="w-full rounded-xl bg-slate-900 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Commencer →
       </button>
@@ -261,7 +261,7 @@ function Playing({
                 key={i}
                 disabled={answered}
                 onClick={() => onAnswer(i)}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-slate-800 transition ${stateClasses(state)}`}
+                className={`flex w-full touch-manipulation items-center gap-3 rounded-xl border px-4 py-4 text-left text-slate-800 transition ${stateClasses(state)}`}
               >
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-semibold ${badgeClasses(state)}`}
@@ -294,7 +294,7 @@ function Playing({
             </div>
             <button
               onClick={onNext}
-              className="mt-4 w-full rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+              className="mt-4 w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800"
             >
               {isLast ? "Voir mon résultat →" : "Question suivante →"}
             </button>
@@ -317,7 +317,7 @@ function optionState(i: number, item: QuizItem, answered: boolean): OptState {
 function stateClasses(s: OptState): string {
   switch (s) {
     case "idle":
-      return "border-slate-200 bg-white hover:border-slate-900 hover:bg-slate-50 cursor-pointer";
+      return "border-slate-200 bg-white hover:border-slate-900 hover:bg-slate-50 active:border-slate-900 active:bg-slate-100 active:scale-[0.99] cursor-pointer";
     case "correct":
       return "border-emerald-500 bg-emerald-50";
     case "wrong":
@@ -369,7 +369,7 @@ function Results({
         </div>
         <button
           onClick={onRestart}
-          className="mt-6 rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-700"
+          className="mt-6 w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800 sm:w-auto"
         >
           🔁 Nouveau quiz
         </button>
@@ -459,10 +459,10 @@ function Pill({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+      className={`touch-manipulation rounded-full border px-4 py-2.5 text-sm font-medium transition active:scale-95 ${
         active
           ? "border-slate-900 bg-slate-900 text-white"
-          : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+          : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100"
       }`}
     >
       {children}
