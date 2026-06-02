@@ -6,14 +6,29 @@ import BottomNav from "@/components/BottomNav";
 
 const geist = Geist({ subsets: ["latin"] });
 
+const DESCRIPTION =
+  "Préparez l'examen civique français : révisez par thématique et entraînez-vous avec un quiz. Questions issues des listes officielles (CSP et CR) du ministère de l'Intérieur.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://examen-civique.vercel.app"),
   title: "Examen Civique — Réviser les questions de connaissance",
-  description:
-    "Préparez l'examen civique français : révisez par thématique et entraînez-vous avec un quiz. Questions issues des listes officielles (CSP et CR) du ministère de l'Intérieur.",
+  description: DESCRIPTION,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Examen Civique",
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "Examen Civique",
+    title: "Examen Civique — Préparez l'examen civique français",
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Examen Civique — Préparez l'examen civique français",
+    description: DESCRIPTION,
   },
 };
 
@@ -39,7 +54,18 @@ export default function RootLayout({
               href="/"
               className="flex touch-manipulation items-center gap-2 font-bold text-slate-900 active:opacity-70"
             >
-              <span className="text-xl">🇫🇷</span>
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 64 64"
+                aria-hidden="true"
+                className="shrink-0"
+              >
+                <rect width="64" height="64" rx="14" fill="#0f172a" />
+                <circle cx="32" cy="32" r="21" fill="#0b56d0" />
+                <circle cx="32" cy="32" r="14" fill="#ffffff" />
+                <circle cx="32" cy="32" r="7" fill="#e4002b" />
+              </svg>
               <span>Examen Civique</span>
             </Link>
             {/* Liens visibles sur desktop ; sur mobile, voir la barre de navigation en bas */}
@@ -49,6 +75,12 @@ export default function RootLayout({
                 className="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 Réviser
+              </Link>
+              <Link
+                href="/progression"
+                className="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                🏆 Progression
               </Link>
               <Link
                 href="/quiz"

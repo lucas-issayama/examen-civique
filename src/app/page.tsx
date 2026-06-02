@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { THEMES, QUESTIONS, countByTheme } from "@/lib/questions";
+import HomeProfileCard from "@/components/HomeProfileCard";
 
 export default function Home() {
   const counts = countByTheme();
 
   return (
     <div className="space-y-14">
+      <HomeProfileCard />
       {/* Hero */}
       <section className="text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm text-slate-600">

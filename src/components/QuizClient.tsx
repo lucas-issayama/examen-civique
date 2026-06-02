@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   QUESTIONS,
   THEMES,
@@ -10,6 +11,16 @@ import {
   type Question,
   type ThemeSlug,
 } from "@/lib/questions";
+import {
+  applyQuiz,
+  levelInfo,
+  loadProfile,
+  pointsForStreak,
+  streakMultiplier,
+  type Badge,
+  type QuizOutcome,
+  type QuizSession,
+} from "@/lib/gamification";
 
 type Phase = "setup" | "playing" | "results";
 
@@ -33,6 +44,7 @@ export default function QuizClient() {
 
   const [items, setItems] = useState<QuizItem[]>([]);
   const [current, setCurrent] = useState(0);
+  const [outcome, setOutcome] = useState<QuizOutcome | null>(null);
 
   const available = useMemo(() => {
     return QUESTIONS.filter((item) => {
@@ -64,11 +76,17 @@ export default function QuizClient() {
     );
   }
 
+  function finish(finalItems: QuizItem[]) {
+    const session = buildSession(finalItems);
+    setOutcome(applyQuiz(loadProfile(), session));
+    setPhase("results");
+  }
+
   function next() {
     if (current + 1 < items.length) {
       setCurrent((c) => c + 1);
     } else {
-      setPhase("results");
+      finish(items);
     }
   }
 
@@ -76,7 +94,19 @@ export default function QuizClient() {
     setPhase("setup");
     setItems([]);
     setCurrent(0);
+    setOutcome(null);
   }
+
+  // Série de bonnes réponses se terminant à la question courante (affichage live)
+  const liveStreak = useMemo(() => {
+    let s = 0;
+    for (let i = 0; i <= current && i < items.length; i++) {
+      const it = items[i];
+      if (it.picked === null) break;
+      s = it.picked === it.correctIdx ? s + 1 : 0;
+    }
+    return s;
+  }, [items, current]);
 
   if (phase === "setup") {
     return (
@@ -93,19 +123,46 @@ export default function QuizClient() {
     );
   }
 
-  if (phase === "results") {
-    return <Results items={items} onRestart={restart} />;
+  if (phase === "results" && outcome) {
+    return <Results items={items} outcome={outcome} onRestart={restart} />;
   }
 
   return (
     <Playing
       items={items}
       current={current}
+      streak={liveStreak}
       onAnswer={answer}
       onNext={next}
       onQuit={restart}
     />
   );
+}
+
+/** Compute scoring + per-theme breakdown from the played items, in order. */
+function buildSession(items: QuizItem[]): QuizSession {
+  let streak = 0;
+  let bestStreak = 0;
+  let xp = 0;
+  let correct = 0;
+  const answers: QuizSession["answers"] = [];
+
+  for (const it of items) {
+    const ok = it.picked === it.correctIdx;
+    answers.push({ themeSlug: it.question.themeSlug, correct: ok });
+    if (ok) {
+      streak += 1;
+      bestStreak = Math.max(bestStreak, streak);
+      xp += pointsForStreak(streak);
+      correct += 1;
+    } else {
+      streak = 0;
+    }
+  }
+  // Bonus quiz parfait
+  if (items.length >= 10 && correct === items.length) xp += 50;
+
+  return { length: items.length, correct, answers, bestStreak, xpEarned: xp };
 }
 
 /* ---------------- Setup ---------------- */
@@ -200,12 +257,14 @@ function Setup({
 function Playing({
   items,
   current,
+  streak,
   onAnswer,
   onNext,
   onQuit,
 }: {
   items: QuizItem[];
   current: number;
+  streak: number;
   onAnswer: (idx: number) => void;
   onNext: () => void;
   onQuit: () => void;
@@ -217,13 +276,18 @@ function Playing({
   const score = items.filter((i) => i.picked === i.correctIdx).length;
   const progress = ((current + (answered ? 1 : 0)) / items.length) * 100;
   const isLast = current + 1 === items.length;
+  const mult = streakMultiplier(streak);
+  const gained = answered && isCorrect ? pointsForStreak(streak) : 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Progress */}
       <div>
         <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
-          <button onClick={onQuit} className="hover:text-slate-900">
+          <button
+            onClick={onQuit}
+            className="touch-manipulation hover:text-slate-900 active:opacity-60"
+          >
             ← Quitter
           </button>
           <span>
@@ -237,6 +301,25 @@ function Playing({
             style={{ width: `${progress}%` }}
           />
         </div>
+        {/* Compteur de série / combo */}
+        {streak >= 2 && (
+          <div className="mt-2 flex animate-fade-in items-center justify-center gap-2 text-sm font-semibold">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
+                streak >= 5
+                  ? "bg-orange-100 text-orange-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              🔥 Série de {streak}
+            </span>
+            {mult > 1 && (
+              <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs text-white">
+                combo ×{mult}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Question card */}
@@ -287,7 +370,14 @@ function Playing({
                   : "bg-rose-50 text-rose-800"
               }`}
             >
-              {isCorrect ? "✓ Bonne réponse !" : "✕ Mauvaise réponse."}{" "}
+              <span className="inline-flex items-center gap-2">
+                {isCorrect ? "✓ Bonne réponse !" : "✕ Mauvaise réponse."}
+                {gained > 0 && (
+                  <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                    +{gained} XP
+                  </span>
+                )}
+              </span>{" "}
               <span className="font-normal text-slate-600">
                 {item.question.explanation}
               </span>
@@ -342,18 +432,33 @@ function badgeClasses(s: OptState): string {
 
 function Results({
   items,
+  outcome,
   onRestart,
 }: {
   items: QuizItem[];
+  outcome: QuizOutcome;
   onRestart: () => void;
 }) {
   const score = items.filter((i) => i.picked === i.correctIdx).length;
   const total = items.length;
   const pct = Math.round((score / total) * 100);
   const { emoji, message } = verdict(pct);
+  const li = levelInfo(outcome.profile.totalXp);
+  const bestStreak = Math.max(...sessionStreaks(items), 0);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Level-up banner */}
+      {outcome.leveledUp && (
+        <div className="animate-fade-in rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 p-5 text-center text-white shadow">
+          <div className="text-3xl">🎉</div>
+          <p className="mt-1 text-lg font-extrabold">
+            Niveau {outcome.newLevel} atteint !
+          </p>
+          <p className="text-sm opacity-90">Continuez sur votre lancée 💪</p>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <div className="text-5xl">{emoji}</div>
         <h1 className="mt-3 text-3xl font-extrabold">
@@ -367,12 +472,77 @@ function Results({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <button
-          onClick={onRestart}
-          className="mt-6 w-full touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800 sm:w-auto"
-        >
-          🔁 Nouveau quiz
-        </button>
+
+        {/* Gains de la partie */}
+        <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+          <Stat label="XP gagnés" value={`+${outcome.xpGained}`} accent="text-emerald-600" />
+          <Stat label="Série max" value={`🔥 ${bestStreak}`} />
+          <Stat
+            label="Jours d'affilée"
+            value={`📅 ${outcome.dailyStreak}`}
+          />
+        </div>
+
+        {/* Progression de niveau */}
+        <div className="mt-5 rounded-xl bg-slate-50 p-4 text-left">
+          <div className="mb-1.5 flex items-center justify-between text-sm">
+            <span className="font-semibold text-slate-900">
+              Niveau {li.level}
+            </span>
+            <span className="text-slate-500">
+              {li.current} / {li.needed} XP
+            </span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full rounded-full bg-slate-900 transition-all duration-500"
+              style={{ width: `${li.pct}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Encore {li.toNext} XP avant le niveau {li.level + 1}.
+          </p>
+        </div>
+
+        {/* Badges débloqués */}
+        {outcome.newBadges.length > 0 && (
+          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-800">
+              🏅 Nouveau{outcome.newBadges.length > 1 ? "x" : ""} badge
+              {outcome.newBadges.length > 1 ? "s" : ""} débloqué
+              {outcome.newBadges.length > 1 ? "s" : ""} !
+            </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-3">
+              {outcome.newBadges.map((b: Badge) => (
+                <div
+                  key={b.id}
+                  className="flex w-24 animate-fade-in flex-col items-center text-center"
+                  title={b.description}
+                >
+                  <span className="text-3xl">{b.emoji}</span>
+                  <span className="mt-1 text-xs font-semibold text-amber-900">
+                    {b.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            onClick={onRestart}
+            className="touch-manipulation rounded-xl bg-slate-900 px-6 py-4 font-semibold text-white transition hover:bg-slate-700 active:scale-[0.99] active:bg-slate-800"
+          >
+            🔁 Nouveau quiz
+          </button>
+          <Link
+            href="/progression"
+            className="touch-manipulation rounded-xl border border-slate-300 bg-white px-6 py-4 font-semibold text-slate-800 transition hover:bg-slate-100 active:scale-[0.99]"
+          >
+            🏆 Ma progression
+          </Link>
+        </div>
       </div>
 
       {/* Review */}
@@ -426,6 +596,34 @@ function verdict(pct: number): { emoji: string; message: string } {
     emoji: "📚",
     message: "Il reste du travail — passez par le mode révision !",
   };
+}
+
+/** Running streak lengths reached during the quiz (for "best streak" display). */
+function sessionStreaks(items: QuizItem[]): number[] {
+  const out: number[] = [];
+  let s = 0;
+  for (const it of items) {
+    s = it.picked === it.correctIdx ? s + 1 : 0;
+    out.push(s);
+  }
+  return out;
+}
+
+function Stat({
+  label,
+  value,
+  accent = "text-slate-900",
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-3">
+      <div className={`text-lg font-extrabold ${accent}`}>{value}</div>
+      <div className="mt-0.5 text-xs text-slate-500">{label}</div>
+    </div>
+  );
 }
 
 /* ---------------- Shared UI ---------------- */
