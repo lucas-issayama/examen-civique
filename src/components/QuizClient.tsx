@@ -6,6 +6,7 @@ import {
   QUESTIONS,
   THEMES,
   THEME_BY_SLUG,
+  isDatesChiffres,
   shuffle,
   type ListCode,
   type Question,
@@ -41,6 +42,7 @@ export default function QuizClient() {
   const [phase, setPhase] = useState<Phase>("setup");
   const [theme, setTheme] = useState<ThemeSlug | "all">("all");
   const [list, setList] = useState<ListCode | "all">("all");
+  const [datesChiffres, setDatesChiffres] = useState(false);
   const [length, setLength] = useState(10);
 
   const [items, setItems] = useState<QuizItem[]>([]);
@@ -51,9 +53,10 @@ export default function QuizClient() {
     return QUESTIONS.filter((item) => {
       if (theme !== "all" && item.themeSlug !== theme) return false;
       if (list !== "all" && !item.lists.includes(list)) return false;
+      if (datesChiffres && !isDatesChiffres(item)) return false;
       return true;
     });
-  }, [theme, list]);
+  }, [theme, list, datesChiffres]);
 
   // Mode immersif pendant le jeu : masque le chrome global (en-tête, pied, nav)
   useEffect(() => {
@@ -131,6 +134,8 @@ export default function QuizClient() {
         setTheme={setTheme}
         list={list}
         setList={setList}
+        datesChiffres={datesChiffres}
+        setDatesChiffres={setDatesChiffres}
         length={length}
         setLength={setLength}
         available={available.length}
@@ -188,6 +193,8 @@ function Setup({
   setTheme,
   list,
   setList,
+  datesChiffres,
+  setDatesChiffres,
   length,
   setLength,
   available,
@@ -197,6 +204,8 @@ function Setup({
   setTheme: (t: ThemeSlug | "all") => void;
   list: ListCode | "all";
   setList: (l: ListCode | "all") => void;
+  datesChiffres: boolean;
+  setDatesChiffres: (v: boolean) => void;
   length: number;
   setLength: (n: number) => void;
   available: number;
@@ -240,6 +249,23 @@ function Setup({
             CR
           </Pill>
         </div>
+      </Section>
+
+      <Section title="Type de questions">
+        <div className="flex flex-wrap gap-2">
+          <Pill active={!datesChiffres} onClick={() => setDatesChiffres(false)}>
+            Toutes
+          </Pill>
+          <Pill active={datesChiffres} onClick={() => setDatesChiffres(true)}>
+            🔢 Dates et chiffres
+          </Pill>
+        </div>
+        {datesChiffres && (
+          <p className="mt-2 text-xs text-slate-500">
+            Uniquement les questions avec une date ou un nombre — celles qui
+            posent le plus de difficultés.
+          </p>
+        )}
       </Section>
 
       <Section title="Nombre de questions">

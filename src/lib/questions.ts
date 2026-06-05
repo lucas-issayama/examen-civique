@@ -85,6 +85,13 @@ export const THEME_BY_SLUG: Record<ThemeSlug, ThemeMeta> = Object.fromEntries(
 
 export const QUESTIONS: Question[] = rawQuestions as Question[];
 
+const DIGIT = /\d/;
+
+/** Questions portant sur des dates ou des chiffres (un nombre dans l'énoncé ou la bonne réponse). */
+export function isDatesChiffres(q: Question): boolean {
+  return DIGIT.test(q.q) || DIGIT.test(q.options[q.correct]);
+}
+
 export function countByTheme(): Record<ThemeSlug, number> {
   const counts = {} as Record<ThemeSlug, number>;
   for (const t of THEMES) counts[t.slug] = 0;
