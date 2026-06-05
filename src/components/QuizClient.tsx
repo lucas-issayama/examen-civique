@@ -36,7 +36,12 @@ interface QuizItem {
   picked: number | null;
 }
 
-const LENGTHS = [10, 20, 30];
+const LENGTHS = [10, 20, 30, 40];
+
+/** Format officiel de l'examen civique : 40 questions, 32 bonnes réponses minimum (80 %). */
+const EXAM_LENGTH = 40;
+const EXAM_PASS_COUNT = 32;
+const EXAM_PASS_PCT = 80;
 
 export default function QuizClient() {
   const [phase, setPhase] = useState<Phase>("setup");
@@ -272,7 +277,7 @@ function Setup({
         <div className="flex flex-wrap gap-2">
           {LENGTHS.map((n) => (
             <Pill key={n} active={length === n} onClick={() => setLength(n)}>
-              {n}
+              {n === EXAM_LENGTH ? `${n} · format examen 🎓` : n}
             </Pill>
           ))}
         </div>
@@ -497,6 +502,11 @@ function Results({
   const { emoji, message } = verdict(pct);
   const li = levelInfo(outcome.profile.totalXp);
   const bestStreak = Math.max(...sessionStreaks(items), 0);
+  // Verdict façon examen officiel : 32 bonnes réponses sur 40 (80 %)
+  const isExamFormat = total === EXAM_LENGTH;
+  const examPassed = isExamFormat
+    ? score >= EXAM_PASS_COUNT
+    : pct >= EXAM_PASS_PCT;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -523,6 +533,37 @@ function Results({
             className={`h-full rounded-full ${pct >= 70 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-rose-500"}`}
             style={{ width: `${pct}%` }}
           />
+        </div>
+
+        {/* Verdict selon le seuil officiel de l'examen civique */}
+        <div
+          className={`mt-4 rounded-xl border p-4 text-left ${
+            examPassed
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-rose-200 bg-rose-50"
+          }`}
+        >
+          <p
+            className={`font-semibold ${examPassed ? "text-emerald-800" : "text-rose-800"}`}
+          >
+            {isExamFormat
+              ? examPassed
+                ? `🎓 Examen blanc réussi ! ${score} / ${EXAM_LENGTH} (minimum requis : ${EXAM_PASS_COUNT})`
+                : `🎓 Examen blanc échoué : ${score} / ${EXAM_LENGTH} (minimum requis : ${EXAM_PASS_COUNT})`
+              : examPassed
+                ? "🎓 Au-dessus du seuil officiel de l'examen !"
+                : "🎓 En dessous du seuil officiel de l'examen."}
+          </p>
+          <p
+            className={`mt-1 text-sm ${examPassed ? "text-emerald-700" : "text-rose-700"}`}
+          >
+            L&apos;examen civique officiel comporte {EXAM_LENGTH} questions : il
+            faut{" "}
+            <strong>
+              {EXAM_PASS_COUNT} bonnes réponses ({EXAM_PASS_PCT} %)
+            </strong>{" "}
+            pour le réussir.
+          </p>
         </div>
 
         {/* Gains de la partie */}
